@@ -19,9 +19,10 @@ function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }
 function Recenter({ center }: { center: [number, number] }) {
   const map = useMap()
   useEffect(() => {
-    map.setView(center)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (!map.getBounds().contains(center)) {
+      map.setView(center)
+    }
+  }, [center, map])
   return null
 }
 
