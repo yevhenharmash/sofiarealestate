@@ -10,6 +10,7 @@ export interface Listing {
   lat: number
   lng: number
   images: string[]
+  createdAt: string
 }
 
 export interface MapBounds {
@@ -22,10 +23,4 @@ export interface MapBounds {
 export interface ListingFilters {
   maxPrice?: number
   type?: ListingType
-}
-
-export const LISTING_TYPE_LABELS: Record<ListingType, string> = {
-  room: 'Room',
-  flat: 'Flat',
-  house: 'House',
 }

@@ -23,10 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { LocationPicker } from '@/components/LocationPicker'
+import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
+import { useLang } from '@/lib/i18n'
 import { supabase, LISTING_PHOTOS_BUCKET } from '@/lib/supabaseClient'
 import { isValidBulgarianMobile } from '@/lib/phone'
 import type { ListingType } from '@/lib/types'
-import { LISTING_TYPE_LABELS } from '@/lib/types'
 import { SOFIA_CENTER } from '@/lib/constants'
 
 const MAX_IMAGES = 6
@@ -55,6 +56,8 @@ const INITIAL_FORM: FormState = {
 const DEFAULT_POSITION = { lat: SOFIA_CENTER[0], lng: SOFIA_CENTER[1] }
 
 export function PostModal({ open, onOpenChange }: PostModalProps) {
+  const { t } = useLang()
+  const typeLabels = useListingTypeLabels()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [position, setPosition] = useState<{ lat: number; lng: number }>(DEFAULT_POSITION)
@@ -72,12 +75,12 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
   function useMyLocation() {
     if (!navigator.geolocation) {
-      toast.error('Your browser does not support geolocation.')
+      toast.error(t('postModal.errorGeoUnsupported'))
       return
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => toast.error('Could not access your location. Check your browser permissions.'),
+      () => toast.error(t('postModal.errorGeoDenied')),
     )
   }
 
@@ -121,11 +124,11 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       return
     }
 
-    if (!form.title.trim()) return toast.error('Title is required.')
+    if (!form.title.trim()) return toast.error(t('postModal.errorTitleRequired'))
     const price = Number(form.price)
-    if (!form.price || Number.isNaN(price) || price <= 0) return toast.error('Enter a valid price.')
+    if (!form.price || Number.isNaN(price) || price <= 0) return toast.error(t('postModal.errorPriceInvalid'))
     if (!isValidBulgarianMobile(form.phone)) {
-      return toast.error('Enter a valid Bulgarian mobile number, e.g. 0888 123 456.')
+      return toast.error(t('postModal.errorPhoneInvalid'))
     }
 
     setIsSubmitting(true)
@@ -145,10 +148,10 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       if (insertError) throw insertError
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
-      toast.success('Listing posted.')
+      toast.success(t('postModal.successPosted'))
       resetAndClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      toast.error(err instanceof Error ? err.message : t('postModal.errorGeneric'))
     } finally {
       setIsSubmitting(false)
     }
@@ -158,10 +161,8 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(next) : resetAndClose())}>
       <DialogContent className="flex max-h-[90vh] max-w-lg flex-col overflow-hidden sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Post a listing</DialogTitle>
-          <DialogDescription>
-            Fill in the details below. It'll appear on the map instantly.
-          </DialogDescription>
+          <DialogTitle>{t('postModal.title')}</DialogTitle>
+          <DialogDescription>{t('postModal.description')}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
@@ -181,30 +182,30 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">{t('postModal.fieldTitle')}</Label>
             <Input
               id="title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Cozy 1-bedroom near Vitosha Blvd"
+              placeholder={t('postModal.fieldTitlePlaceholder')}
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('postModal.fieldDescription')}</Label>
             <Textarea
               id="description"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Details about the place, amenities, availability…"
+              placeholder={t('postModal.fieldDescriptionPlaceholder')}
               rows={3}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="price">Price (EUR / month)</Label>
+              <Label htmlFor="price">{t('postModal.fieldPrice')}</Label>
               <Input
                 id="price"
                 type="number"
@@ -217,7 +218,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type">{t('postModal.fieldType')}</Label>
               <Select
                 value={form.type}
                 onValueChange={(value) => setForm({ ...form, type: value as ListingType })}
@@ -226,7 +227,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(LISTING_TYPE_LABELS).map(([value, label]) => (
+                  {Object.entries(typeLabels).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
                     </SelectItem>
@@ -237,7 +238,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">{t('postModal.fieldPhone')}</Label>
             <Input
               id="phone"
               type="tel"
@@ -250,19 +251,17 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label>Location</Label>
+              <Label>{t('postModal.location')}</Label>
               <Button type="button" variant="ghost" size="sm" onClick={useMyLocation}>
-                Use my location
+                {t('postModal.useMyLocation')}
               </Button>
             </div>
             <LocationPicker position={position} onChange={(lat, lng) => setPosition({ lat, lng })} />
-            <p className="text-xs text-muted-foreground">
-              Click on the map or drag the pin to set the exact location.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('postModal.locationHint')}</p>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Photos</Label>
+            <Label>{t('postModal.photos')}</Label>
             <div className="flex flex-wrap gap-2">
               {files.map((file, i) => (
                 <div key={i} className="relative h-16 w-16 overflow-hidden rounded-md border">
@@ -293,17 +292,19 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
                 </label>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Up to {MAX_IMAGES} photos, 5MB each.</p>
+            <p className="text-xs text-muted-foreground">
+              {t('postModal.photosHint', { max: MAX_IMAGES })}
+            </p>
           </div>
         </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={resetAndClose}>
-              Cancel
+              {t('postModal.cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Post listing
+              {isSubmitting ? t('postModal.submitting') : t('postModal.submit')}
             </Button>
           </DialogFooter>
         </form>

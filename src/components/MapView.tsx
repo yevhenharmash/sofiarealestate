@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import type { Listing, MapBounds } from '@/lib/types'
-import { LISTING_TYPE_LABELS } from '@/lib/types'
+import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { DEFAULT_MAP_ZOOM, SOFIA_CENTER } from '@/lib/constants'
 
 const BOUNDS_DEBOUNCE_MS = 300
@@ -46,7 +46,7 @@ function boundsToMapBounds(bounds: L.LatLngBounds): MapBounds {
   }
 }
 
-function BoundsWatcher({ onBoundsChange }: { onBoundsChange: (bounds: MapBounds) => void }) {
+function BoundsWatcher({ onBoundsChange }: { onBoundsChange?: (bounds: MapBounds) => void }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const map = useMapEvents({
@@ -57,12 +57,12 @@ function BoundsWatcher({ onBoundsChange }: { onBoundsChange: (bounds: MapBounds)
   function scheduleUpdate() {
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      onBoundsChange(boundsToMapBounds(map.getBounds()))
+      onBoundsChange?.(boundsToMapBounds(map.getBounds()))
     }, BOUNDS_DEBOUNCE_MS)
   }
 
   useEffect(() => {
-    onBoundsChange(boundsToMapBounds(map.getBounds()))
+    onBoundsChange?.(boundsToMapBounds(map.getBounds()))
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
@@ -85,12 +85,13 @@ function FlyToHandler({ target }: { target: { lat: number; lng: number; zoom?: n
 interface MapViewProps {
   listings: Listing[]
   selectedId?: string | null
-  onBoundsChange: (bounds: MapBounds) => void
+  onBoundsChange?: (bounds: MapBounds) => void
   onMarkerClick?: (listing: Listing) => void
   flyTo?: { lat: number; lng: number; zoom?: number } | null
 }
 
 export function MapView({ listings, selectedId, onBoundsChange, onMarkerClick, flyTo }: MapViewProps) {
+  const typeLabels = useListingTypeLabels()
   const markers = useMemo(
     () =>
       listings.map((listing) => (
@@ -105,12 +106,12 @@ export function MapView({ listings, selectedId, onBoundsChange, onMarkerClick, f
           <Popup>
             <div className="text-sm font-medium">{listing.title}</div>
             <div className="text-xs text-muted-foreground">
-              {LISTING_TYPE_LABELS[listing.type]} · {formatPrice(listing.price)}
+              {typeLabels[listing.type]} · {formatPrice(listing.price)}
             </div>
           </Popup>
         </Marker>
       )),
-    [listings, selectedId, onMarkerClick],
+    [listings, selectedId, onMarkerClick, typeLabels],
   )
 
   return (

@@ -1,4 +1,5 @@
 import { List, Map as MapIcon } from 'lucide-react'
+import { useLang } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 interface MobileTogglePillProps {
@@ -7,8 +8,10 @@ interface MobileTogglePillProps {
 }
 
 export function MobileTogglePill({ view, onChange }: MobileTogglePillProps) {
+  const { t } = useLang()
+
   return (
-    <div className="fixed bottom-5 left-1/2 z-[1000] flex -translate-x-1/2 rounded-full bg-card p-1 shadow-lg ring-1 ring-foreground/10 sm:hidden">
+    <div className="fixed bottom-5 left-1/2 z-[1000] flex -translate-x-1/2 rounded-full bg-card p-1 shadow-[var(--shadow-lg)] sm:hidden">
       <button
         type="button"
         onClick={() => onChange('list')}
@@ -18,7 +21,7 @@ export function MobileTogglePill({ view, onChange }: MobileTogglePillProps) {
         )}
       >
         <List className="h-4 w-4" />
-        List
+        {t('toggle.list')}
       </button>
       <button
         type="button"
@@ -29,7 +32,7 @@ export function MobileTogglePill({ view, onChange }: MobileTogglePillProps) {
         )}
       >
         <MapIcon className="h-4 w-4" />
-        Map
+        {t('toggle.map')}
       </button>
     </div>
   )
