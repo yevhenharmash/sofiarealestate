@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { Toaster } from 'sonner'
 import { MapView } from '@/components/MapView'
 import { ListingCard } from '@/components/ListingCard'
 import { FilterBar } from '@/components/FilterBar'
@@ -68,7 +69,9 @@ function App() {
           </div>
         </aside>
 
-        <main className={cn('flex-1', mobileView === 'map' ? 'block' : 'hidden sm:block')}>
+        <main
+          className={cn('relative isolate flex-1', mobileView === 'map' ? 'block' : 'hidden sm:block')}
+        >
           <MapView
             listings={listings}
             selectedId={selectedId}
@@ -81,6 +84,7 @@ function App() {
 
       <MobileTogglePill view={mobileView} onChange={setMobileView} />
       <PostModal open={isPostModalOpen} onOpenChange={setIsPostModalOpen} />
+      <Toaster position="top-center" richColors />
     </div>
   )
 }

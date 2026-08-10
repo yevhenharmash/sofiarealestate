@@ -2,6 +2,7 @@ import { useState } from 'react'
 import imageCompression from 'browser-image-compression'
 import { useQueryClient } from '@tanstack/react-query'
 import { Loader2, Upload, X } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -51,29 +52,32 @@ const INITIAL_FORM: FormState = {
   phone: '',
 }
 
+const DEFAULT_POSITION = { lat: SOFIA_CENTER[0], lng: SOFIA_CENTER[1] }
+
 export function PostModal({ open, onOpenChange }: PostModalProps) {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null)
+  const [position, setPosition] = useState<{ lat: number; lng: number }>(DEFAULT_POSITION)
   const [files, setFiles] = useState<File[]>([])
   const [honeypot, setHoneypot] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   function resetAndClose() {
     setForm(INITIAL_FORM)
-    setPosition(null)
+    setPosition(DEFAULT_POSITION)
     setFiles([])
     setHoneypot('')
-    setError(null)
     onOpenChange(false)
   }
 
   function useMyLocation() {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      toast.error('Your browser does not support geolocation.')
+      return
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setPosition({ lat: SOFIA_CENTER[0], lng: SOFIA_CENTER[1] }),
+      () => toast.error('Could not access your location. Check your browser permissions.'),
     )
   }
 
@@ -109,7 +113,6 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
 
     // Honeypot: real users never fill this hidden field. Silently "succeed"
     // for bots instead of telling them what tripped the check.
@@ -118,13 +121,12 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       return
     }
 
-    if (!form.title.trim()) return setError('Title is required.')
+    if (!form.title.trim()) return toast.error('Title is required.')
     const price = Number(form.price)
-    if (!form.price || Number.isNaN(price) || price <= 0) return setError('Enter a valid price.')
+    if (!form.price || Number.isNaN(price) || price <= 0) return toast.error('Enter a valid price.')
     if (!isValidBulgarianMobile(form.phone)) {
-      return setError('Enter a valid Bulgarian mobile number, e.g. 0888 123 456.')
+      return toast.error('Enter a valid Bulgarian mobile number, e.g. 0888 123 456.')
     }
-    if (!position) return setError('Drop a pin on the map to set the location.')
 
     setIsSubmitting(true)
     try {
@@ -143,9 +145,10 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       if (insertError) throw insertError
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success('Listing posted.')
       resetAndClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -153,7 +156,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(next) : resetAndClose())}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-lg">
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col overflow-hidden sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Post a listing</DialogTitle>
           <DialogDescription>
@@ -161,7 +164,8 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 space-y-4 overflow-y-auto py-0.5">
           {/* Honeypot — hidden from real users via CSS, bots fill every field they can find. */}
           <div className="absolute -left-[9999px]" aria-hidden="true">
             <label htmlFor="company">Company</label>
@@ -291,8 +295,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
             </div>
             <p className="text-xs text-muted-foreground">Up to {MAX_IMAGES} photos, 5MB each.</p>
           </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={resetAndClose}>
