@@ -1,7 +1,5 @@
-import { useState } from 'react'
-import { MapPin, Search, X } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
-import { useAddressSearch, type AddressSuggestion } from '@/hooks/useAddressSearch'
+import type { AddressSuggestion } from '@/hooks/useAddressSearch'
 import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useLang } from '@/lib/i18n'
 import type { ListingFilters, ListingType } from '@/lib/types'
@@ -16,20 +14,9 @@ interface FilterBarProps {
   resultCount: number
 }
 
-export function FilterBar({ filters, onFiltersChange, onAddressSelect, resultCount }: FilterBarProps) {
+export function FilterBar({ filters, onFiltersChange, resultCount }: FilterBarProps) {
   const { t } = useLang()
   const typeLabels = useListingTypeLabels()
-  const [query, setQuery] = useState('')
-  const [isFocused, setIsFocused] = useState(false)
-  const { suggestions, isLoading } = useAddressSearch(query)
-
-  function handleSelect(suggestion: AddressSuggestion) {
-    onAddressSelect(suggestion)
-    setQuery(suggestion.label)
-    setIsFocused(false)
-  }
-
-  const showDropdown = isFocused && query.length >= 3 && (suggestions.length > 0 || isLoading)
 
   const typeOptions: { value: ListingType | 'all'; label: string }[] = [
     { value: 'room', label: typeLabels.room },
@@ -40,13 +27,13 @@ export function FilterBar({ filters, onFiltersChange, onAddressSelect, resultCou
 
   return (
     <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <div className="relative w-full sm:max-w-xs">
+      {/* Address search — disabled for now, revisiting the UX.
+      <div ref={searchRef} className="relative w-full sm:max-w-xs">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 150)}
           placeholder={t('filter.searchPlaceholder')}
           className="h-[42px] w-full rounded-full border-none bg-card pl-10 pr-9 text-sm shadow-[var(--shadow-sm)] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
         />
@@ -83,17 +70,18 @@ export function FilterBar({ filters, onFiltersChange, onAddressSelect, resultCou
           </div>
         )}
       </div>
+      */}
 
       <div className="flex items-center gap-3 rounded-full bg-card px-4 py-2 shadow-[var(--shadow-sm)]">
-        <span className="inline-block min-w-[5.5rem] whitespace-nowrap text-sm font-semibold">
+        <span className="flex w-28 shrink-0 items-baseline justify-start gap-1 whitespace-nowrap text-sm font-semibold">
           {filters.maxPrice === undefined ? (
             t('filter.priceShowAll')
           ) : (
-            <span className="flex items-baseline gap-1">
+            <>
               {t('filter.priceUpToPrefix')}
               <span className="inline-block w-10 text-right tabular-nums">{filters.maxPrice}</span>
               €
-            </span>
+            </>
           )}
         </span>
         <Slider

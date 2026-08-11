@@ -21,6 +21,9 @@ $$;
 
 -- Re-create get_listings_in_bounds to add created_at to its output too,
 -- keeping both RPCs' shapes consistent for the shared `Listing` type.
+-- Dropped first: CREATE OR REPLACE can't change a function's return-row shape.
+DROP FUNCTION IF EXISTS get_listings_in_bounds(float, float, float, float, numeric, text, int);
+
 CREATE OR REPLACE FUNCTION get_listings_in_bounds(
   min_lng float, min_lat float, max_lng float, max_lat float,
   max_price numeric DEFAULT NULL,

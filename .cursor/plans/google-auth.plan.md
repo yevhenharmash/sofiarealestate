@@ -4,28 +4,28 @@ overview: Add Google sign-in via Supabase Auth (behind a sign-in modal) that gat
 todos:
   - id: auth-migration
     content: Add supabase/migrations/0003_auth_profiles.sql (profiles table, trigger, listings.user_id, updated RLS)
-    status: pending
+    status: completed
   - id: auth-provider
     content: Create src/lib/AuthProvider.tsx and mount it in main.tsx
-    status: pending
+    status: completed
   - id: auth-post-intent
     content: "Preserve post-login redirect target (redirectTo: full URL) and reopen PostModal via a sessionStorage intent flag checked in App.tsx's Layout"
-    status: pending
+    status: completed
   - id: auth-signin-modal
     content: Add shadcn dialog-based SignInModal.tsx ("Continue with Google") per the Google Sign-In Popup design
-    status: pending
+    status: completed
   - id: auth-header
     content: "Update Header.tsx: sign-in avatar opens SignInModal, gate Post a listing behind auth"
-    status: pending
+    status: completed
   - id: auth-profile-popover
     content: Add shadcn avatar/popover components and build ProfilePopover.tsx (name, picture, phone numbers — no sign out, that lives on the future account page)
-    status: pending
+    status: completed
   - id: auth-postmodal
     content: Update PostModal.tsx to require auth, prefill/select saved phone numbers, set user_id on insert
-    status: pending
+    status: completed
   - id: auth-i18n
     content: Add auth.* i18n keys to i18n.tsx for bg/en
-    status: pending
+    status: completed
 isProject: false
 ---
 

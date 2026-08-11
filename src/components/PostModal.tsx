@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import imageCompression from 'browser-image-compression'
 import { useQueryClient } from '@tanstack/react-query'
 import { Loader2, Upload, X } from 'lucide-react'
@@ -27,6 +27,7 @@ import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useLang } from '@/lib/i18n'
 import { supabase, LISTING_PHOTOS_BUCKET } from '@/lib/supabaseClient'
 import { isValidBulgarianMobile } from '@/lib/phone'
+import { useAuth } from '@/lib/AuthProvider'
 import type { ListingType } from '@/lib/types'
 import { SOFIA_CENTER } from '@/lib/constants'
 
@@ -59,11 +60,21 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
   const { t } = useLang()
   const typeLabels = useListingTypeLabels()
   const queryClient = useQueryClient()
+  const { user, profile } = useAuth()
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [position, setPosition] = useState<{ lat: number; lng: number }>(DEFAULT_POSITION)
   const [files, setFiles] = useState<File[]>([])
   const [honeypot, setHoneypot] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const savedPhones = profile?.phone_numbers ?? []
+
+  useEffect(() => {
+    if (open && savedPhones.length > 0) {
+      setForm((prev) => (prev.phone ? prev : { ...prev, phone: savedPhones[0] }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   function resetAndClose() {
     setForm(INITIAL_FORM)
@@ -124,6 +135,14 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       return
     }
 
+    // Defensive: Header gates opening this modal behind auth, but a session
+    // could still expire mid-fill.
+    if (!user) {
+      toast.error(t('postModal.errorGeneric'))
+      resetAndClose()
+      return
+    }
+
     if (!form.title.trim()) return toast.error(t('postModal.errorTitleRequired'))
     const price = Number(form.price)
     if (!form.price || Number.isNaN(price) || price <= 0) return toast.error(t('postModal.errorPriceInvalid'))
@@ -143,6 +162,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
         phone: form.phone.trim(),
         images,
         location: `POINT(${position.lng} ${position.lat})`,
+        user_id: user.id,
       })
 
       if (insertError) throw insertError
@@ -239,14 +259,29 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="phone">{t('postModal.fieldPhone')}</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="0888 123 456"
-              required
-            />
+            {savedPhones.length > 1 ? (
+              <Select value={form.phone} onValueChange={(value) => setForm({ ...form, phone: value })}>
+                <SelectTrigger id="phone" className="w-full">
+                  <SelectValue placeholder="0888 123 456" />
+                </SelectTrigger>
+                <SelectContent>
+                  {savedPhones.map((phone) => (
+                    <SelectItem key={phone} value={phone}>
+                      {phone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="0888 123 456"
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-1.5">

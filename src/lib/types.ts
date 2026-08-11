@@ -24,3 +24,11 @@ export interface ListingFilters {
   maxPrice?: number
   type?: ListingType
 }
+
+export interface Profile {
+  id: string
+  full_name: string | null
+  avatar_url: string | null
+  phone_numbers: string[]
+  created_at: string
+}

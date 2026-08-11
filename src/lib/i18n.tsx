@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, type ReactNode } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
 
 export type Lang = 'bg' | 'en'
 
@@ -67,6 +68,14 @@ const dictionaries: Record<Lang, Dictionary> = {
     'postModal.errorGeoDenied': 'Не успяхме да достъпим локацията ви. Проверете разрешенията на браузъра.',
     'postModal.successPosted': 'Обявата е публикувана.',
     'postModal.errorGeneric': 'Нещо се обърка. Опитайте отново.',
+
+    'auth.signInTitle': 'Вход',
+    'auth.signInDescription': 'Влезте с Google акаунта си, за да публикувате обяви и да управлявате профила си.',
+    'auth.continueWithGoogle': 'Продължи с Google',
+    'auth.phoneNumbers': 'Телефонни номера',
+    'auth.addPhone': 'Добави',
+    'auth.phonePlaceholder': '0888 123 456',
+    'auth.removePhone': 'Премахни номера',
   },
   en: {
     'header.brand': 'Imoti BG',
@@ -128,6 +137,14 @@ const dictionaries: Record<Lang, Dictionary> = {
     'postModal.errorGeoDenied': 'Could not access your location. Check your browser permissions.',
     'postModal.successPosted': 'Listing posted.',
     'postModal.errorGeneric': 'Something went wrong. Please try again.',
+
+    'auth.signInTitle': 'Sign in',
+    'auth.signInDescription': 'Sign in with Google to post listings and manage your profile.',
+    'auth.continueWithGoogle': 'Continue with Google',
+    'auth.phoneNumbers': 'Phone numbers',
+    'auth.addPhone': 'Add',
+    'auth.phonePlaceholder': '0888 123 456',
+    'auth.removePhone': 'Remove phone number',
   },
 }
 
@@ -146,22 +163,8 @@ interface LangContextValue {
 
 const LangContext = createContext<LangContextValue | null>(null)
 
-function readInitialLang(): Lang {
-  if (typeof window === 'undefined') return 'bg'
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  return stored === 'bg' || stored === 'en' ? stored : 'bg'
-}
-
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(readInitialLang)
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, lang)
-  }, [lang])
-
-  function setLang(next: Lang) {
-    setLangState(next)
-  }
+  const [lang, setLang] = useLocalStorage<Lang>(STORAGE_KEY, 'bg')
 
   function t(key: string, vars?: Vars): string {
     const dictionary = dictionaries[lang]
