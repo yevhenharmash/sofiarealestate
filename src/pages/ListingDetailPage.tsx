@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, Phone } from 'lucide-react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { Header } from '@/components/Header'
+import { ImageLightbox } from '@/components/ImageLightbox'
 import { ListingImage } from '@/components/ListingImage'
 import { MapView } from '@/components/MapView'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +37,7 @@ export function ListingDetailPage() {
   const { data: nearbyListings = [] } = useMapListings(bounds, filters)
   const images = listing?.images ?? []
   const carousel = useImageCarousel(images)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   return (
     <div className="flex h-screen flex-col">
@@ -71,8 +74,9 @@ export function ListingDetailPage() {
                 <ListingImage
                   src={images[carousel.index]}
                   alt={listing.title}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full cursor-pointer object-cover"
                   iconClassName="h-8 w-8"
+                  onClick={() => setLightboxOpen(true)}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -155,6 +159,14 @@ export function ListingDetailPage() {
           </main>
         </div>
       )}
+
+      <ImageLightbox
+        images={images}
+        index={carousel.index}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        onIndexChange={carousel.setIndex}
+      />
     </div>
   )
 }

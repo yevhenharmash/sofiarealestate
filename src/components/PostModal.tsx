@@ -26,7 +26,7 @@ import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useLang } from '@/lib/i18n'
 import { supabase } from '@/lib/supabaseClient'
 import { uploadListingImages } from '@/lib/listingImages'
-import { isValidMobilePhone } from '@/lib/phone'
+import { isValidMobilePhone, normalizePhone } from '@/lib/phone'
 import { useAuth } from '@/lib/AuthProvider'
 import type { ListingStatus, ListingType } from '@/lib/types'
 import { SOFIA_CENTER, MAX_LISTING_IMAGES } from '@/lib/constants'
@@ -60,6 +60,10 @@ const STATUS_OPTIONS: ListingStatus[] = ['active', 'draft', 'expired']
 
 const DEFAULT_POSITION = { lat: SOFIA_CENTER[0], lng: SOFIA_CENTER[1] }
 
+// Sentinel select value — distinct from any real phone number, never
+// submitted, just used to detect "the user picked the 'add new' row".
+const NEW_PHONE_VALUE = '__new__'
+
 export function PostModal({ open, onOpenChange }: PostModalProps) {
   const { t } = useLang()
   const typeLabels = useListingTypeLabels()
@@ -70,8 +74,10 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
   const [files, setFiles] = useState<File[]>([])
   const [honeypot, setHoneypot] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [addingNewPhone, setAddingNewPhone] = useState(false)
 
   const savedPhones = profile?.phone_numbers ?? []
+  const showPhoneSelect = savedPhones.length > 0 && !addingNewPhone
 
   useEffect(() => {
     if (open && savedPhones.length > 0) {
@@ -85,7 +91,17 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
     setPosition(DEFAULT_POSITION)
     setFiles([])
     setHoneypot('')
+    setAddingNewPhone(false)
     onOpenChange(false)
+  }
+
+  function handlePhoneSelect(value: string) {
+    if (value === NEW_PHONE_VALUE) {
+      setAddingNewPhone(true)
+      setForm((prev) => ({ ...prev, phone: '' }))
+    } else {
+      setForm((prev) => ({ ...prev, phone: value }))
+    }
   }
 
   function useMyLocation() {
@@ -136,7 +152,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
     setIsSubmitting(true)
     try {
-      const images = await uploadListingImages(files)
+      const images = await uploadListingImages(files, user.id)
 
       const { error: insertError } = await supabase.from('listings').insert({
         title: form.title.trim(),
@@ -151,6 +167,20 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       })
 
       if (insertError) throw insertError
+
+      // Best-effort: a brand-new phone number is saved to the profile so
+      // it's available to pick from next time. Failure here shouldn't
+      // surface as if posting the listing failed.
+      const normalizedPhone = normalizePhone(form.phone.trim())
+      const alreadySaved = savedPhones.some((p) => normalizePhone(p) === normalizedPhone)
+      if (!alreadySaved) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ phone_numbers: [...savedPhones, normalizedPhone] })
+          .eq('id', user.id)
+        if (profileError) console.error('Failed to save new phone number to profile:', profileError)
+        else await queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
       await queryClient.invalidateQueries({ queryKey: ['my-listings'] })
@@ -264,8 +294,8 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="phone">{t('postModal.fieldPhone')}</Label>
-            {savedPhones.length > 1 ? (
-              <Select value={form.phone} onValueChange={(value) => setForm({ ...form, phone: value })}>
+            {showPhoneSelect ? (
+              <Select value={form.phone} onValueChange={handlePhoneSelect}>
                 <SelectTrigger id="phone" className="w-full">
                   <SelectValue placeholder="0888 123 456" />
                 </SelectTrigger>
@@ -275,17 +305,32 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
                       {phone}
                     </SelectItem>
                   ))}
+                  <SelectItem value={NEW_PHONE_VALUE}>{t('postModal.addNewPhone')}</SelectItem>
                 </SelectContent>
               </Select>
             ) : (
-              <Input
-                id="phone"
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="0888 123 456"
-                required
-              />
+              <div className="space-y-1">
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="0888 123 456"
+                  required
+                />
+                {savedPhones.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingNewPhone(false)
+                      setForm((prev) => ({ ...prev, phone: savedPhones[0] }))
+                    }}
+                    className="text-xs font-semibold text-primary"
+                  >
+                    {t('postModal.useSavedPhone')}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 

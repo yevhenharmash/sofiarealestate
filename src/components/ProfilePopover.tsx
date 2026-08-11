@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useLang } from '@/lib/i18n'
 import { useAuth } from '@/lib/AuthProvider'
 import { supabase } from '@/lib/supabaseClient'
+import { uploadAvatarImage } from '@/lib/avatarImage'
 import { isValidMobilePhone, normalizePhone } from '@/lib/phone'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +22,7 @@ export function ProfilePopover() {
   const [name, setName] = useState('')
   const [phones, setPhones] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -38,6 +40,25 @@ export function ProfilePopover() {
 
   function removePhone(index: number) {
     setPhones((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !user) return
+
+    setIsUploadingPhoto(true)
+    try {
+      const avatarUrl = await uploadAvatarImage(file, user.id)
+      const { error } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
+      if (error) throw error
+      await queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+      toast.success(t('profile.saved'))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('postModal.errorGeneric'))
+    } finally {
+      setIsUploadingPhoto(false)
+    }
   }
 
   async function handleSave() {
@@ -84,11 +105,12 @@ export function ProfilePopover() {
         </DialogHeader>
 
         <div className="flex items-center gap-4">
-          <button
-            type="button"
+          <label
             title={t('profile.changePhoto')}
-            onClick={() => toast(t('profile.photoUploadUnavailable'))}
-            className="group relative shrink-0"
+            className={cn(
+              'group relative shrink-0 cursor-pointer',
+              isUploadingPhoto && 'pointer-events-none opacity-70',
+            )}
           >
             <Avatar size="lg" className="size-24">
               <AvatarImage src={profile?.avatar_url ?? undefined} alt={profile?.full_name ?? ''} />
@@ -100,7 +122,14 @@ export function ProfilePopover() {
             <AvatarBadge className="size-7 bg-card text-primary ring-2 ring-card">
               <Camera className="h-3.5 w-3.5" />
             </AvatarBadge>
-          </button>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoSelected}
+              disabled={isUploadingPhoto}
+            />
+          </label>
           <div className="min-w-0">
             <p className="truncate font-heading text-base">{profile?.full_name || user.email}</p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>

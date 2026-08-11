@@ -12,3 +12,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export const LISTING_PHOTOS_BUCKET = 'listing-photos'
+export const AVATARS_BUCKET = 'avatars'

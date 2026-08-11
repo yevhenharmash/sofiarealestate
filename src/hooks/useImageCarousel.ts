@@ -13,5 +13,5 @@ export function useImageCarousel(images: string[]) {
     setIndex((i) => (i - 1 + images.length) % images.length)
   }
 
-  return { index, next, prev, hasMultiple: images.length > 1 }
+  return { index, setIndex, next, prev, hasMultiple: images.length > 1 }
 }

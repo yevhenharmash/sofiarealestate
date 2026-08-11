@@ -119,13 +119,13 @@ export function MyListingsPage() {
   }
 
   async function saveEdit() {
-    if (!editing) return
+    if (!editing || !user) return
     const price = Number(editForm.price)
     if (!editForm.title.trim() || !editForm.price || Number.isNaN(price) || price <= 0) return
 
     setIsSaving(true)
     try {
-      const uploaded = await uploadListingImages(newImageFiles)
+      const uploaded = await uploadListingImages(newImageFiles, user.id)
       const images = [...existingImages, ...uploaded]
 
       const { error } = await supabase
