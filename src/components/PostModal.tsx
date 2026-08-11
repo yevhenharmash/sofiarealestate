@@ -239,6 +239,43 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
             />
           </div>
 
+          <div className="space-y-1.5">
+            <Label>{t('postModal.photos')}</Label>
+            <div className="flex flex-wrap gap-2">
+              {files.map((file, i) => (
+                <div key={i} className="relative h-16 w-16 overflow-hidden rounded-md border">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={file.name}
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeFile(i)}
+                    className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {files.length < MAX_IMAGES && (
+                <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-md border border-dashed text-muted-foreground hover:border-primary hover:text-primary">
+                  <Upload className="h-5 w-5" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFilesSelected}
+                  />
+                </label>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t('postModal.photosHint', { max: MAX_IMAGES })}
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="price">{t('postModal.fieldPrice')}</Label>
@@ -343,43 +380,6 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
             </div>
             <LocationPicker position={position} onChange={(lat, lng) => setPosition({ lat, lng })} />
             <p className="text-xs text-muted-foreground">{t('postModal.locationHint')}</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>{t('postModal.photos')}</Label>
-            <div className="flex flex-wrap gap-2">
-              {files.map((file, i) => (
-                <div key={i} className="relative h-16 w-16 overflow-hidden rounded-md border">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={file.name}
-                    className="h-full w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeFile(i)}
-                    className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {files.length < MAX_IMAGES && (
-                <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-md border border-dashed text-muted-foreground hover:border-primary hover:text-primary">
-                  <Upload className="h-5 w-5" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleFilesSelected}
-                  />
-                </label>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t('postModal.photosHint', { max: MAX_IMAGES })}
-            </p>
           </div>
         </div>
 

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { ImageOff, Trash2, Upload, X } from 'lucide-react'
+import { ChevronLeft, ImageOff, Trash2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Header } from '@/components/Header'
 import { ListingImage } from '@/components/ListingImage'
+import { LocationPicker } from '@/components/LocationPicker'
 import { MapView } from '@/components/MapView'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,8 +33,9 @@ import { useAuth } from '@/lib/AuthProvider'
 import { useLang } from '@/lib/i18n'
 import { supabase } from '@/lib/supabaseClient'
 import { deleteListingImages, uploadListingImages } from '@/lib/listingImages'
+import { isValidMobilePhone, normalizePhone } from '@/lib/phone'
 import { MAX_LISTING_IMAGES } from '@/lib/constants'
-import type { ListingStatus, OwnedListing } from '@/lib/types'
+import type { ListingStatus, ListingType, OwnedListing } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import type { LayoutContext } from '@/App'
 
@@ -44,6 +46,11 @@ const STATUS_CLASS: Record<ListingStatus, string> = {
   draft: 'bg-muted text-muted-foreground',
   expired: 'bg-destructive/10 text-destructive',
 }
+
+// Sentinel select value — distinct from any real phone number, never
+// submitted, just used to detect "the user picked the 'add new' row".
+// Mirrors the same pattern in PostModal.tsx.
+const NEW_EDIT_PHONE_VALUE = '__new__'
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(price) + ' €'
@@ -57,17 +64,29 @@ export function MyListingsPage() {
   const navigate = useNavigate()
   const typeLabels = useListingTypeLabels()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
 
   const { data: listings = [], isLoading } = useMyListings(user?.id)
   const [filter, setFilter] = useState<Filter>('all')
   const [editing, setEditing] = useState<OwnedListing | null>(null)
   const [deleting, setDeleting] = useState<OwnedListing | null>(null)
-  const [editForm, setEditForm] = useState({ title: '', price: '', description: '' })
+  const [editForm, setEditForm] = useState({
+    title: '',
+    price: '',
+    description: '',
+    type: 'flat' as ListingType,
+    status: 'active' as ListingStatus,
+    phone: '',
+  })
+  const [editPosition, setEditPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [removedImages, setRemovedImages] = useState<string[]>([])
   const [newImageFiles, setNewImageFiles] = useState<File[]>([])
+  const [addingNewEditPhone, setAddingNewEditPhone] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  const savedPhones = profile?.phone_numbers ?? []
+  const showEditPhoneSelect = savedPhones.length > 0 && !addingNewEditPhone
 
   const counts = useMemo(() => {
     const result: Record<Filter, number> = { all: listings.length, active: 0, draft: 0, expired: 0 }
@@ -95,10 +114,35 @@ export function MyListingsPage() {
       title: listing.title,
       price: String(listing.price),
       description: listing.description ?? '',
+      type: listing.type,
+      status: listing.status,
+      phone: listing.phone,
     })
+    setEditPosition({ lat: listing.lat, lng: listing.lng })
     setExistingImages(listing.images)
     setRemovedImages([])
     setNewImageFiles([])
+    setAddingNewEditPhone(false)
+  }
+
+  function handleEditPhoneSelect(value: string) {
+    if (value === NEW_EDIT_PHONE_VALUE) {
+      setAddingNewEditPhone(true)
+      setEditForm((prev) => ({ ...prev, phone: '' }))
+    } else {
+      setEditForm((prev) => ({ ...prev, phone: value }))
+    }
+  }
+
+  function useMyLocationForEdit() {
+    if (!navigator.geolocation) {
+      toast.error(t('postModal.errorGeoUnsupported'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setEditPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => toast.error(t('postModal.errorGeoDenied')),
+    )
   }
 
   const editImageCount = existingImages.length + newImageFiles.length
@@ -119,9 +163,13 @@ export function MyListingsPage() {
   }
 
   async function saveEdit() {
-    if (!editing || !user) return
+    if (!editing || !user || !editPosition) return
     const price = Number(editForm.price)
     if (!editForm.title.trim() || !editForm.price || Number.isNaN(price) || price <= 0) return
+    if (!isValidMobilePhone(editForm.phone)) {
+      toast.error(t('postModal.errorPhoneInvalid'))
+      return
+    }
 
     setIsSaving(true)
     try {
@@ -134,12 +182,29 @@ export function MyListingsPage() {
           title: editForm.title.trim(),
           price,
           description: editForm.description.trim() || null,
+          type: editForm.type,
+          status: editForm.status,
+          phone: editForm.phone.trim(),
+          location: `POINT(${editPosition.lng} ${editPosition.lat})`,
           images,
         })
         .eq('id', editing.id)
       if (error) throw error
 
       if (removedImages.length > 0) await deleteListingImages(removedImages)
+
+      // Best-effort, same as PostModal: a brand-new phone number is saved to
+      // the profile so it's available to pick from next time.
+      const normalizedPhone = normalizePhone(editForm.phone.trim())
+      const alreadySaved = savedPhones.some((p) => normalizePhone(p) === normalizedPhone)
+      if (!alreadySaved) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ phone_numbers: [...savedPhones, normalizedPhone] })
+          .eq('id', user.id)
+        if (profileError) console.error('Failed to save new phone number to profile:', profileError)
+        else await queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+      }
 
       toast.success(t('myListings.updated'))
       setEditing(null)
@@ -174,6 +239,14 @@ export function MyListingsPage() {
 
       <div className="flex flex-1 gap-4 overflow-hidden p-4">
         <div className="flex-1 overflow-y-auto">
+          <Link
+            to="/"
+            className="mb-3 flex items-center gap-1.5 text-sm font-bold text-primary"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t('myListings.back')}
+          </Link>
+
           <div className="mb-6 flex items-start justify-between gap-4">
             <h1 className="font-heading text-3xl">{t('myListings.title')}</h1>
             <Button className="rounded-full bg-primary hover:bg-primary-hover" onClick={openPostModal}>
@@ -311,17 +384,7 @@ export function MyListingsPage() {
           <DialogHeader>
             <DialogTitle>{t('myListings.editTitle')}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-price">{t('postModal.fieldPrice')}</Label>
-              <Input
-                id="edit-price"
-                type="number"
-                min={0}
-                value={editForm.price}
-                onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-              />
-            </div>
+          <div className="max-h-[65vh] space-y-4 overflow-y-auto py-0.5">
             <div className="space-y-1.5">
               <Label htmlFor="edit-title">{t('postModal.fieldTitle')}</Label>
               <Input
@@ -383,6 +446,108 @@ export function MyListingsPage() {
                   </label>
                 )}
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-price">{t('postModal.fieldPrice')}</Label>
+                <Input
+                  id="edit-price"
+                  type="number"
+                  min={0}
+                  value={editForm.price}
+                  onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-type">{t('postModal.fieldType')}</Label>
+                <Select
+                  value={editForm.type}
+                  onValueChange={(value) => setEditForm({ ...editForm, type: value as ListingType })}
+                >
+                  <SelectTrigger id="edit-type" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(typeLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-status">{t('postModal.fieldStatus')}</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(value) => setEditForm({ ...editForm, status: value as ListingStatus })}
+              >
+                <SelectTrigger id="edit-status" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_ORDER.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {t(`myListings.status${status[0].toUpperCase()}${status.slice(1)}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-phone">{t('postModal.fieldPhone')}</Label>
+              {showEditPhoneSelect ? (
+                <Select value={editForm.phone} onValueChange={handleEditPhoneSelect}>
+                  <SelectTrigger id="edit-phone" className="w-full">
+                    <SelectValue placeholder="0888 123 456" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {savedPhones.map((phone) => (
+                      <SelectItem key={phone} value={phone}>
+                        {phone}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value={NEW_EDIT_PHONE_VALUE}>{t('postModal.addNewPhone')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="space-y-1">
+                  <Input
+                    id="edit-phone"
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    placeholder="0888 123 456"
+                  />
+                  {savedPhones.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddingNewEditPhone(false)
+                        setEditForm((prev) => ({ ...prev, phone: savedPhones[0] }))
+                      }}
+                      className="text-xs font-semibold text-primary"
+                    >
+                      {t('postModal.useSavedPhone')}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label>{t('postModal.location')}</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={useMyLocationForEdit}>
+                  {t('postModal.useMyLocation')}
+                </Button>
+              </div>
+              <LocationPicker position={editPosition} onChange={(lat, lng) => setEditPosition({ lat, lng })} />
+              <p className="text-xs text-muted-foreground">{t('postModal.locationHint')}</p>
             </div>
           </div>
           <DialogFooter>

@@ -96,6 +96,7 @@ const dictionaries: Record<Lang, Dictionary> = {
     'profile.saved': 'Профилът е запазен.',
     'profile.signOut': 'Изход',
 
+    'myListings.back': 'Обратно към картата',
     'myListings.title': 'Моите обяви',
     'myListings.loading': 'Зареждане на обявите…',
     'myListings.filterAll': 'Всички ({count})',
@@ -204,6 +205,7 @@ const dictionaries: Record<Lang, Dictionary> = {
     'profile.saved': 'Profile saved.',
     'profile.signOut': 'Sign out',
 
+    'myListings.back': 'Back to the map',
     'myListings.title': 'My listings',
     'myListings.loading': 'Loading your listings…',
     'myListings.filterAll': 'All ({count})',
