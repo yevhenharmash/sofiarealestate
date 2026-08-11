@@ -20,7 +20,7 @@ function buildMarkerIcon(listing: Listing, isSelected: boolean): L.DivIcon {
       isSelected
         ? 'bg-primary text-primary-foreground'
         : 'bg-card text-card-foreground'
-    } border border-border shadow-md rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap -translate-x-1/2 -translate-y-1/2">${formatPrice(
+    } inline-block w-max border border-border shadow-md rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap -translate-x-1/2 -translate-y-1/2">${formatPrice(
       listing.price,
     )}</div>`,
     iconSize: [0, 0],

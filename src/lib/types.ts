@@ -1,4 +1,5 @@
 export type ListingType = 'room' | 'flat' | 'house'
+export type ListingStatus = 'active' | 'draft' | 'expired'
 
 export interface Listing {
   id: string
@@ -10,6 +11,20 @@ export interface Listing {
   lat: number
   lng: number
   images: string[]
+  createdAt: string
+}
+
+export interface OwnedListing {
+  id: string
+  title: string
+  description: string | null
+  price: number
+  type: ListingType
+  phone: string
+  images: string[]
+  status: ListingStatus
+  lat: number
+  lng: number
   createdAt: string
 }
 

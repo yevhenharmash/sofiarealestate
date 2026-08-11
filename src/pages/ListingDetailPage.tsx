@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, Phone } from 'lucide-react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { Header } from '@/components/Header'
+import { ListingImage } from '@/components/ListingImage'
 import { MapView } from '@/components/MapView'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -67,10 +68,11 @@ export function ListingDetailPage() {
 
             <div className="relative h-[250px] shrink-0 overflow-hidden rounded-[26px] bg-muted">
               {images.length > 0 ? (
-                <img
+                <ListingImage
                   src={images[carousel.index]}
                   alt={listing.title}
                   className="h-full w-full object-cover"
+                  iconClassName="h-8 w-8"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -117,7 +119,7 @@ export function ListingDetailPage() {
             <h1 className="text-2xl font-bold text-pretty">{listing.title}</h1>
 
             <div>
-              <Badge className="rounded-full bg-secondary text-secondary-foreground">
+              <Badge className="h-6 rounded-full bg-secondary px-3 text-secondary-foreground">
                 {typeLabels[listing.type]}
               </Badge>
             </div>

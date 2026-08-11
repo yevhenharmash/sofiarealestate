@@ -1,11 +1,12 @@
-// Matches Bulgarian mobile numbers: 08xxxxxxxx or +359 8xxxxxxxx (mobile
-// prefixes start with 87/88/89), tolerant of spaces and dashes.
-const BG_MOBILE_REGEX = /^(?:0|\+359)8[7-9]\d{7}$/
+// Loose international phone check: optional leading +, 7-15 digits after
+// stripping spaces/dashes. Not Bulgaria-specific — owners and renters here
+// aren't necessarily calling from a Bulgarian number.
+const PHONE_REGEX = /^\+?\d{7,15}$/
 
 export function normalizePhone(raw: string): string {
   return raw.replace(/[\s-]/g, '')
 }
 
-export function isValidBulgarianMobile(raw: string): boolean {
-  return BG_MOBILE_REGEX.test(normalizePhone(raw))
+export function isValidMobilePhone(raw: string): boolean {
+  return PHONE_REGEX.test(normalizePhone(raw))
 }

@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, ImageOff, Phone } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ListingImage } from '@/components/ListingImage'
 import { useImageCarousel } from '@/hooks/useImageCarousel'
 import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useLang } from '@/lib/i18n'
@@ -35,11 +36,10 @@ export function ListingCard({ listing, isSelected, onSelect }: ListingCardProps)
     >
       <div className="relative h-[124px] w-[136px] shrink-0 overflow-hidden rounded-[20px] bg-muted">
         {hasImages ? (
-          <img
+          <ListingImage
             src={images[carousel.index]}
             alt={listing.title}
             className="h-full w-full object-cover"
-            loading="lazy"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -85,7 +85,7 @@ export function ListingCard({ listing, isSelected, onSelect }: ListingCardProps)
           <div className="flex items-baseline gap-1.5">
             <span className="font-heading text-2xl leading-none text-price">{formatPrice(listing.price)}</span>
             <span className="text-[11px] text-muted-foreground">{t('listing.perMonth')}</span>
-            <Badge className="ml-auto shrink-0 rounded-full bg-secondary text-secondary-foreground">
+            <Badge className="ml-auto shrink-0 h-6 rounded-full bg-secondary px-3 text-secondary-foreground">
               {typeLabels[listing.type]}
             </Badge>
           </div>

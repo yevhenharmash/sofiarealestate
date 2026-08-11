@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import imageCompression from 'browser-image-compression'
 import { useQueryClient } from '@tanstack/react-query'
 import { Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -25,13 +24,14 @@ import {
 import { LocationPicker } from '@/components/LocationPicker'
 import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useLang } from '@/lib/i18n'
-import { supabase, LISTING_PHOTOS_BUCKET } from '@/lib/supabaseClient'
-import { isValidBulgarianMobile } from '@/lib/phone'
+import { supabase } from '@/lib/supabaseClient'
+import { uploadListingImages } from '@/lib/listingImages'
+import { isValidMobilePhone } from '@/lib/phone'
 import { useAuth } from '@/lib/AuthProvider'
-import type { ListingType } from '@/lib/types'
-import { SOFIA_CENTER } from '@/lib/constants'
+import type { ListingStatus, ListingType } from '@/lib/types'
+import { SOFIA_CENTER, MAX_LISTING_IMAGES } from '@/lib/constants'
 
-const MAX_IMAGES = 6
+const MAX_IMAGES = MAX_LISTING_IMAGES
 
 interface PostModalProps {
   open: boolean
@@ -44,6 +44,7 @@ type FormState = {
   price: string
   type: ListingType
   phone: string
+  status: ListingStatus
 }
 
 const INITIAL_FORM: FormState = {
@@ -52,7 +53,10 @@ const INITIAL_FORM: FormState = {
   price: '',
   type: 'flat',
   phone: '',
+  status: 'active',
 }
+
+const STATUS_OPTIONS: ListingStatus[] = ['active', 'draft', 'expired']
 
 const DEFAULT_POSITION = { lat: SOFIA_CENTER[0], lng: SOFIA_CENTER[1] }
 
@@ -105,26 +109,6 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  async function uploadImages(): Promise<string[]> {
-    const urls: string[] = []
-    for (const file of files) {
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true,
-      })
-      const ext = file.name.split('.').pop() || 'jpg'
-      const path = `${crypto.randomUUID()}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from(LISTING_PHOTOS_BUCKET)
-        .upload(path, compressed, { contentType: file.type })
-      if (uploadError) throw uploadError
-      const { data } = supabase.storage.from(LISTING_PHOTOS_BUCKET).getPublicUrl(path)
-      urls.push(data.publicUrl)
-    }
-    return urls
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -146,13 +130,13 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
     if (!form.title.trim()) return toast.error(t('postModal.errorTitleRequired'))
     const price = Number(form.price)
     if (!form.price || Number.isNaN(price) || price <= 0) return toast.error(t('postModal.errorPriceInvalid'))
-    if (!isValidBulgarianMobile(form.phone)) {
+    if (!isValidMobilePhone(form.phone)) {
       return toast.error(t('postModal.errorPhoneInvalid'))
     }
 
     setIsSubmitting(true)
     try {
-      const images = await uploadImages()
+      const images = await uploadListingImages(files)
 
       const { error: insertError } = await supabase.from('listings').insert({
         title: form.title.trim(),
@@ -160,6 +144,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
         price,
         type: form.type,
         phone: form.phone.trim(),
+        status: form.status,
         images,
         location: `POINT(${position.lng} ${position.lat})`,
         user_id: user.id,
@@ -168,6 +153,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
       if (insertError) throw insertError
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
+      await queryClient.invalidateQueries({ queryKey: ['my-listings'] })
       toast.success(t('postModal.successPosted'))
       resetAndClose()
     } catch (err) {
@@ -255,6 +241,25 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="status">{t('postModal.fieldStatus')}</Label>
+            <Select
+              value={form.status}
+              onValueChange={(value) => setForm({ ...form, status: value as ListingStatus })}
+            >
+              <SelectTrigger id="status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {t(`myListings.status${status[0].toUpperCase()}${status.slice(1)}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

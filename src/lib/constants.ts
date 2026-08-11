@@ -10,3 +10,5 @@ export const DEFAULT_LISTING_FILTERS: ListingFilters = {
   type: DEFAULT_LISTING_TYPE,
   maxPrice: DEFAULT_MAX_PRICE,
 }
+
+export const MAX_LISTING_IMAGES = 6

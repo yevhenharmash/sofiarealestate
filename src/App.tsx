@@ -5,6 +5,7 @@ import { useSessionStorage } from 'usehooks-ts'
 import { PostModal } from '@/components/PostModal'
 import { HomePage } from '@/pages/HomePage'
 import { ListingDetailPage } from '@/pages/ListingDetailPage'
+import { MyListingsPage } from '@/pages/MyListingsPage'
 import { DEFAULT_LISTING_FILTERS } from '@/lib/constants'
 import { POST_INTENT_KEY, useAuth } from '@/lib/AuthProvider'
 import type { ListingFilters, MapBounds } from '@/lib/types'
@@ -53,6 +54,7 @@ function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/my-listings" element={<MyListingsPage />} />
         <Route path="/listing/:id" element={<ListingDetailPage />} />
       </Route>
     </Routes>

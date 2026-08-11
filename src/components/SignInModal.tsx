@@ -33,7 +33,17 @@ export function SignInModal({ open, onOpenChange, postIntent }: SignInModalProps
           <DialogTitle>{t('auth.signInTitle')}</DialogTitle>
           <DialogDescription>{t('auth.signInDescription')}</DialogDescription>
         </DialogHeader>
-        <Button onClick={handleContinue}>{t('auth.continueWithGoogle')}</Button>
+        <div className="flex flex-col gap-2">
+          <Button onClick={handleContinue}>{t('auth.continueWithGoogle')}</Button>
+          <p className="text-center text-xs text-muted-foreground">{t('auth.firstTimeHint')}</p>
+        </div>
+
+        <div className="border-t pt-3 text-center">
+          <p className="mb-1.5 text-xs text-muted-foreground">{t('auth.termsPrefix')}</p>
+          <a href="#" className="text-xs font-semibold text-primary hover:underline">
+            {t('auth.termsLinkText')}
+          </a>
+        </div>
       </DialogContent>
     </Dialog>
   )
