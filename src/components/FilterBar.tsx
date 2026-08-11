@@ -32,10 +32,10 @@ export function FilterBar({ filters, onFiltersChange, onAddressSelect, resultCou
   const showDropdown = isFocused && query.length >= 3 && (suggestions.length > 0 || isLoading)
 
   const typeOptions: { value: ListingType | 'all'; label: string }[] = [
-    { value: 'all', label: t('filter.typeAll') },
     { value: 'room', label: typeLabels.room },
     { value: 'flat', label: typeLabels.flat },
     { value: 'house', label: typeLabels.house },
+    { value: 'all', label: t('filter.typeAll') },
   ]
 
   return (
@@ -85,8 +85,16 @@ export function FilterBar({ filters, onFiltersChange, onAddressSelect, resultCou
       </div>
 
       <div className="flex items-center gap-3 rounded-full bg-card px-4 py-2 shadow-[var(--shadow-sm)]">
-        <span className="whitespace-nowrap text-sm font-semibold">
-          {t('filter.priceUpTo', { price: filters.maxPrice ?? MAX_PRICE_CEILING })}
+        <span className="inline-block min-w-[5.5rem] whitespace-nowrap text-sm font-semibold">
+          {filters.maxPrice === undefined ? (
+            t('filter.priceShowAll')
+          ) : (
+            <span className="flex items-baseline gap-1">
+              {t('filter.priceUpToPrefix')}
+              <span className="inline-block w-10 text-right tabular-nums">{filters.maxPrice}</span>
+              €
+            </span>
+          )}
         </span>
         <Slider
           className="w-24"

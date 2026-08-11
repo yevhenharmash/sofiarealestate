@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { PostModal } from '@/components/PostModal'
 import { HomePage } from '@/pages/HomePage'
 import { ListingDetailPage } from '@/pages/ListingDetailPage'
+import { DEFAULT_LISTING_FILTERS } from '@/lib/constants'
 import type { ListingFilters, MapBounds } from '@/lib/types'
 
 export interface LayoutContext {
@@ -17,7 +18,7 @@ export interface LayoutContext {
 function Layout() {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
   const [bounds, setBounds] = useState<MapBounds | null>(null)
-  const [filters, setFilters] = useState<ListingFilters>({})
+  const [filters, setFilters] = useState<ListingFilters>(DEFAULT_LISTING_FILTERS)
 
   const context: LayoutContext = {
     openPostModal: () => setIsPostModalOpen(true),
