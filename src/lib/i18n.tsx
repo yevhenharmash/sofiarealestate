@@ -13,6 +13,7 @@ const dictionaries: Record<Lang, Dictionary> = {
     'header.logoInitial': 'И',
     'header.postListing': 'Публикувай обява',
     'header.myListings': 'Моите обяви',
+    'header.favourites': 'Любими',
 
     'home.loading': 'Зареждане на обяви…',
     'home.empty': 'Няма обяви в тази област. Опитайте да отдалечите картата или да промените филтрите.',
@@ -33,6 +34,10 @@ const dictionaries: Record<Lang, Dictionary> = {
     'listing.call': 'Обади се {phone}',
     'listing.prevPhoto': 'Предишна снимка',
     'listing.nextPhoto': 'Следваща снимка',
+    'listing.favourite': 'Добави в любими',
+    'listing.unfavourite': 'Премахни от любими',
+    'listing.open': 'Отвори обявата',
+    'listing.viewListing': 'Виж обявата',
 
     'detail.back': 'Обратно към {count} обяви',
     'detail.photoIndex': '{current} / {total}',
@@ -116,12 +121,20 @@ const dictionaries: Record<Lang, Dictionary> = {
     'myListings.editTitle': 'Редактирай обява',
     'myListings.deleted': 'Обявата е изтрита.',
     'myListings.updated': 'Обявата е обновена.',
+
+    'favourites.back': 'Обратно към картата',
+    'favourites.title': 'Любими',
+    'favourites.loading': 'Зареждане на любимите обяви…',
+    'favourites.emptyTitle': 'Нямате запазени обяви',
+    'favourites.emptyText': 'Разгледайте обявите и запазете любимите си, за да ги намерите тук по-късно.',
+    'favourites.browseListings': 'Разгледай обявите',
   },
   en: {
     'header.brand': 'Imoti BG',
     'header.logoInitial': 'I',
     'header.postListing': 'Post a listing',
     'header.myListings': 'My listings',
+    'header.favourites': 'Favourites',
 
     'home.loading': 'Loading listings…',
     'home.empty': 'No listings in this area. Try zooming out or adjusting filters.',
@@ -142,6 +155,10 @@ const dictionaries: Record<Lang, Dictionary> = {
     'listing.call': 'Call {phone}',
     'listing.prevPhoto': 'Previous photo',
     'listing.nextPhoto': 'Next photo',
+    'listing.favourite': 'Add to favourites',
+    'listing.unfavourite': 'Remove from favourites',
+    'listing.open': 'Open listing',
+    'listing.viewListing': 'View listing',
 
     'detail.back': 'Back to {count} listings',
     'detail.photoIndex': '{current} / {total}',
@@ -225,6 +242,13 @@ const dictionaries: Record<Lang, Dictionary> = {
     'myListings.editTitle': 'Edit listing',
     'myListings.deleted': 'Listing deleted.',
     'myListings.updated': 'Listing updated.',
+
+    'favourites.back': 'Back to the map',
+    'favourites.title': 'Favourites',
+    'favourites.loading': 'Loading your favourites…',
+    'favourites.emptyTitle': "You haven't saved any listings",
+    'favourites.emptyText': 'Browse listings and save your favourites to find them here later.',
+    'favourites.browseListings': 'Browse listings',
   },
 }
 

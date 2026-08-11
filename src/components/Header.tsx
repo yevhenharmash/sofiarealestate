@@ -37,6 +37,15 @@ export function Header({ onOpenPostModal }: HeaderProps) {
     navigate('/my-listings')
   }
 
+  function handleFavouritesClick() {
+    if (!user) {
+      setSignInPostIntent(false)
+      setIsSignInOpen(true)
+      return
+    }
+    navigate('/favourites')
+  }
+
   return (
     <header className="flex items-center justify-between gap-3 bg-card px-4 py-3 shadow-[var(--shadow-sm)]">
       <div className="flex items-center gap-3">
@@ -75,6 +84,14 @@ export function Header({ onOpenPostModal }: HeaderProps) {
           onClick={handleMyListingsClick}
         >
           {t('header.myListings')}
+        </Button>
+
+        <Button
+          variant="outline"
+          className="hidden rounded-full sm:inline-flex"
+          onClick={handleFavouritesClick}
+        >
+          {t('header.favourites')}
         </Button>
 
         {user ? (

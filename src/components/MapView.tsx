@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import type { Listing, MapBounds } from '@/lib/types'
-import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
+import { MapPopupCard } from '@/components/MapPopupCard'
 import { DEFAULT_MAP_ZOOM, SOFIA_CENTER } from '@/lib/constants'
 
 const BOUNDS_DEBOUNCE_MS = 300
@@ -24,6 +24,10 @@ function buildMarkerIcon(listing: Listing, isSelected: boolean): L.DivIcon {
       listing.price,
     )}</div>`,
     iconSize: [0, 0],
+    // The pill is centered on the anchor point via CSS transform, so its visual
+    // top edge sits well above where Leaflet thinks the icon is. Without this,
+    // the popup's tip opens into the pill instead of above it, clipping its border.
+    popupAnchor: [0, -13],
   })
 }
 
@@ -91,7 +95,6 @@ interface MapViewProps {
 }
 
 export function MapView({ listings, selectedId, onBoundsChange, onMarkerClick, flyTo }: MapViewProps) {
-  const typeLabels = useListingTypeLabels()
   const markers = useMemo(
     () =>
       listings.map((listing) => (
@@ -103,15 +106,12 @@ export function MapView({ listings, selectedId, onBoundsChange, onMarkerClick, f
             click: () => onMarkerClick?.(listing),
           }}
         >
-          <Popup>
-            <div className="text-sm font-medium">{listing.title}</div>
-            <div className="text-xs text-muted-foreground">
-              {typeLabels[listing.type]} · {formatPrice(listing.price)}
-            </div>
+          <Popup minWidth={224} closeButton>
+            <MapPopupCard listing={listing} />
           </Popup>
         </Marker>
       )),
-    [listings, selectedId, onMarkerClick, typeLabels],
+    [listings, selectedId, onMarkerClick],
   )
 
   return (

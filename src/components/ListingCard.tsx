@@ -1,7 +1,9 @@
-import { ChevronLeft, ChevronRight, ImageOff, Phone } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, ImageOff, Phone } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { FavouriteButton } from '@/components/FavouriteButton'
 import { ListingImage } from '@/components/ListingImage'
 import { useImageCarousel } from '@/hooks/useImageCarousel'
 import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
@@ -17,9 +19,17 @@ interface ListingCardProps {
   listing: Listing
   isSelected?: boolean
   onSelect?: (listing: Listing) => void
+  isFavourited?: boolean
+  onToggleFavourite?: (listing: Listing) => void
 }
 
-export function ListingCard({ listing, isSelected, onSelect }: ListingCardProps) {
+export function ListingCard({
+  listing,
+  isSelected,
+  onSelect,
+  isFavourited,
+  onToggleFavourite,
+}: ListingCardProps) {
   const { t } = useLang()
   const typeLabels = useListingTypeLabels()
   const images = listing.images
@@ -78,6 +88,14 @@ export function ListingCard({ listing, isSelected, onSelect }: ListingCardProps)
             </div>
           </>
         )}
+
+        {onToggleFavourite && (
+          <FavouriteButton
+            isFavourited={!!isFavourited}
+            onToggle={() => onToggleFavourite(listing)}
+            className="absolute right-1.5 top-1.5"
+          />
+        )}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-1">
@@ -91,17 +109,30 @@ export function ListingCard({ listing, isSelected, onSelect }: ListingCardProps)
           </div>
           <h3 className="line-clamp-2 text-pretty text-sm font-bold leading-snug">{listing.title}</h3>
         </div>
-        <Button
-          asChild
-          size="sm"
-          className="w-full rounded-full bg-primary hover:bg-primary-hover"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <a href={`tel:${listing.phone}`}>
-            <Phone className="h-4 w-4" />
-            {t('listing.call', { phone: listing.phone })}
-          </a>
-        </Button>
+        <div className="flex gap-1.5">
+          <Button
+            asChild
+            size="sm"
+            className="flex-1 rounded-full bg-primary hover:bg-primary-hover"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <a href={`tel:${listing.phone}`}>
+              <Phone className="h-4 w-4" />
+              {t('listing.call', { phone: listing.phone })}
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="icon-sm"
+            variant="secondary"
+            className="rounded-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link to={`/listing/${listing.id}`} aria-label={t('listing.open')}>
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </Card>
   )

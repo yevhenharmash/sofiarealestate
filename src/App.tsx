@@ -3,6 +3,7 @@ import { Routes, Route, Outlet } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useSessionStorage } from 'usehooks-ts'
 import { PostModal } from '@/components/PostModal'
+import { FavouritesPage } from '@/pages/FavouritesPage'
 import { HomePage } from '@/pages/HomePage'
 import { ListingDetailPage } from '@/pages/ListingDetailPage'
 import { MyListingsPage } from '@/pages/MyListingsPage'
@@ -55,6 +56,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/my-listings" element={<MyListingsPage />} />
+        <Route path="/favourites" element={<FavouritesPage />} />
         <Route path="/listing/:id" element={<ListingDetailPage />} />
       </Route>
     </Routes>

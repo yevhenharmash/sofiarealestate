@@ -5,13 +5,18 @@ import { Header } from '@/components/Header'
 import { ImageLightbox } from '@/components/ImageLightbox'
 import { ListingImage } from '@/components/ListingImage'
 import { MapView } from '@/components/MapView'
+import { SignInModal } from '@/components/SignInModal'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useImageCarousel } from '@/hooks/useImageCarousel'
+import { useFavouriteIds } from '@/hooks/useFavouriteIds'
 import { useListing } from '@/hooks/useListing'
 import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useMapListings } from '@/hooks/useMapListings'
+import { useToggleFavourite } from '@/hooks/useToggleFavourite'
+import { useAuth } from '@/lib/AuthProvider'
 import { useLang } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 import type { LayoutContext } from '@/App'
 
 function formatPrice(price: number): string {
@@ -32,12 +37,27 @@ export function ListingDetailPage() {
   const { t, lang } = useLang()
   const navigate = useNavigate()
   const typeLabels = useListingTypeLabels()
+  const { user } = useAuth()
 
   const { data: listing, isLoading, error } = useListing(id)
   const { data: nearbyListings = [] } = useMapListings(bounds, filters)
+  const { data: favouriteIds = new Set<string>() } = useFavouriteIds(user?.id)
+  const { mutate: toggleFavourite } = useToggleFavourite()
   const images = listing?.images ?? []
   const carousel = useImageCarousel(images)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [isSignInOpen, setIsSignInOpen] = useState(false)
+
+  const isFavourited = !!listing && favouriteIds.has(listing.id)
+
+  function handleToggleFavourite() {
+    if (!listing) return
+    if (!user) {
+      setIsSignInOpen(true)
+      return
+    }
+    toggleFavourite({ listingId: listing.id, isFavourited })
+  }
 
   return (
     <div className="flex h-screen flex-col">
@@ -113,10 +133,11 @@ export function ListingDetailPage() {
               <span className="pb-1 text-sm text-muted-foreground">{t('listing.perMonth')}</span>
               <button
                 type="button"
-                aria-label="favorite"
+                aria-label={t(isFavourited ? 'listing.unfavourite' : 'listing.favourite')}
+                onClick={handleToggleFavourite}
                 className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-foreground hover:bg-muted"
               >
-                <Heart className="h-[18px] w-[18px]" />
+                <Heart className={cn('h-[18px] w-[18px]', isFavourited && 'fill-current text-destructive')} />
               </button>
             </div>
 
@@ -167,6 +188,8 @@ export function ListingDetailPage() {
         onOpenChange={setLightboxOpen}
         onIndexChange={carousel.setIndex}
       />
+
+      <SignInModal open={isSignInOpen} onOpenChange={setIsSignInOpen} />
     </div>
   )
 }
