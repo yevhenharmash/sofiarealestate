@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { ListingImage } from '@/components/ListingImage'
 import { useListingTypeLabels } from '@/hooks/useListingTypeLabels'
 import { useLang } from '@/lib/i18n'
-import type { Listing } from '@/lib/types'
+import type { MapListing } from '@/lib/types'
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(price) + ' €'
@@ -13,7 +13,7 @@ function formatPrice(price: number): string {
 // Deliberately not a re-skinned ListingCard: this is a map-context glance
 // preview, not a commitment surface, so it drops the carousel and call CTA
 // and only keeps what helps decide whether a pin is worth opening.
-export function MapPopupCard({ listing }: { listing: Listing }) {
+export function MapPopupCard({ listing }: { listing: MapListing }) {
   const { t } = useLang()
   const typeLabels = useListingTypeLabels()
   const hasImage = listing.images.length > 0

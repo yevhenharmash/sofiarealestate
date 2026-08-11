@@ -1,5 +1,7 @@
 export type ListingType = 'room' | 'flat' | 'house'
 export type ListingStatus = 'active' | 'draft' | 'expired'
+export type ListingSource = 'user' | 'imotbg'
+export type LocationPrecision = 'exact' | 'approximate'
 
 export interface Listing {
   id: string
@@ -12,6 +14,9 @@ export interface Listing {
   lng: number
   images: string[]
   createdAt: string
+  source: ListingSource
+  sourceUrl: string | null
+  locationPrecision: LocationPrecision
 }
 
 export interface OwnedListing {
@@ -27,6 +32,11 @@ export interface OwnedListing {
   lng: number
   createdAt: string
 }
+
+// What map pins/popups actually render — satisfied by both Listing and
+// OwnedListing, so MapView can show either without depending on
+// imotbg-specific fields that only OwnedListing lacks.
+export type MapListing = Pick<Listing, 'id' | 'title' | 'price' | 'type' | 'lat' | 'lng' | 'images'>
 
 export interface MapBounds {
   minLng: number

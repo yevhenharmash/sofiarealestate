@@ -156,8 +156,25 @@ export function ListingDetailPage() {
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
               <span>
-                {formatRelativeTime(listing.createdAt, lang)} · {t('detail.postedBy')}
+                {formatRelativeTime(listing.createdAt, lang)} ·{' '}
+                {listing.source === 'imotbg' ? (
+                  <a
+                    href={listing.sourceUrl ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    {t('detail.sourceImotbg')}
+                  </a>
+                ) : (
+                  t('detail.postedBy')
+                )}
               </span>
+              {listing.locationPrecision === 'approximate' && (
+                <Badge variant="outline" className="text-[10px]">
+                  {t('detail.approximateLocation')}
+                </Badge>
+              )}
             </div>
 
             <div className="mt-auto flex gap-2 border-t border-border pt-4">

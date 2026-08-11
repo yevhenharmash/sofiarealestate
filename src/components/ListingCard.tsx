@@ -1,4 +1,4 @@
-import { ArrowUpRight, ChevronLeft, ChevronRight, ImageOff, Phone } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, ExternalLink, ImageOff, Phone } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -108,6 +108,26 @@ export function ListingCard({
             </Badge>
           </div>
           <h3 className="line-clamp-2 text-pretty text-sm font-bold leading-snug">{listing.title}</h3>
+          {listing.source === 'imotbg' && (
+            <div className="flex items-center gap-1">
+              <Badge asChild variant="outline" className="text-[10px]">
+                <a
+                  href={listing.sourceUrl ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {t('listing.sourceImotbg')}
+                  <ExternalLink />
+                </a>
+              </Badge>
+              {listing.locationPrecision === 'approximate' && (
+                <span className="text-[10px] text-muted-foreground">
+                  {t('listing.approximateLocation')}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex gap-1.5">
           <Button

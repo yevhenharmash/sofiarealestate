@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
-import type { Listing, MapBounds } from '@/lib/types'
+import type { MapBounds, MapListing } from '@/lib/types'
 import { MapPopupCard } from '@/components/MapPopupCard'
 import { DEFAULT_MAP_ZOOM, SOFIA_CENTER } from '@/lib/constants'
 
@@ -13,7 +13,7 @@ function formatPrice(price: number): string {
   return `${price} €`
 }
 
-function buildMarkerIcon(listing: Listing, isSelected: boolean): L.DivIcon {
+function buildMarkerIcon(listing: MapListing, isSelected: boolean): L.DivIcon {
   return L.divIcon({
     className: 'listing-marker-icon',
     html: `<div class="${
@@ -87,10 +87,10 @@ function FlyToHandler({ target }: { target: { lat: number; lng: number; zoom?: n
 }
 
 interface MapViewProps {
-  listings: Listing[]
+  listings: MapListing[]
   selectedId?: string | null
   onBoundsChange?: (bounds: MapBounds) => void
-  onMarkerClick?: (listing: Listing) => void
+  onMarkerClick?: (listing: MapListing) => void
   flyTo?: { lat: number; lng: number; zoom?: number } | null
 }
 
